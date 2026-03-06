@@ -13,6 +13,7 @@ import android.widget.EditText;
 import android.widget.ImageButton;
 import android.widget.ListAdapter;
 import android.widget.ListView;
+import android.widget.Toast;
 
 import androidx.activity.EdgeToEdge;
 import androidx.appcompat.app.AppCompatActivity;
@@ -23,6 +24,7 @@ import androidx.core.view.WindowInsetsCompat;
 import com.medianet.tp4.Model.StudentModel;
 
 import java.util.ArrayList;
+import java.util.LinkedHashMap;
 import java.util.Map;
 
 public class MainActivity extends AppCompatActivity {
@@ -43,8 +45,22 @@ public class MainActivity extends AppCompatActivity {
         listNotes = findViewById(R.id.list_view_notes);
         btnAddEtudiant = findViewById(R.id.btn_plus);
 
-        listeEdtudients.add(new StudentModel("ali"));
-        listeEdtudients.add(new StudentModel("Mahdi"));
+        Map<String, Double> aliData = new LinkedHashMap<>();
+        aliData.put("Big Data", 15.0);
+        aliData.put("Android", 18.0);
+        aliData.put("Angular", 12.0);
+        aliData.put("UX", 14.0);
+        aliData.put("DataBase", 17.0);
+        aliData.put("C++", 11.0);
+        Map<String, Double> MahdiData = new LinkedHashMap<>();
+        MahdiData.put("Big Data", 10.0);
+        MahdiData.put("Android", 8.0);
+        MahdiData.put("Angular", 12.0);
+        MahdiData.put("UX", 14.3);
+        MahdiData.put("DataBase", 1.0);
+        MahdiData.put("C++", 11.5);
+        listeEdtudients.add(new StudentModel("ali", aliData));
+        listeEdtudients.add(new StudentModel("Mahdi", MahdiData));
         listeEdtudients.add(new StudentModel("Mohamed Amine"));
 
         addButtonListner();
@@ -63,59 +79,72 @@ public class MainActivity extends AppCompatActivity {
     private void addEditTextListner() {
 
         editName.addTextChangedListener(new TextWatcher() {
-            @Override
-            public void afterTextChanged(Editable editable) {
-
-            }
-
-            @Override
-            public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {
-
-            }
+            @Override public void afterTextChanged(Editable editable) {}
+            @Override public void beforeTextChanged(CharSequence charSequence, int i, int i1, int i2) {}
 
             @Override
             public void onTextChanged(CharSequence charSequence, int i, int i1, int i2) {
                 loadListNames();
             }
         });
+
+        editName.setOnFocusChangeListener(new View.OnFocusChangeListener() {
+            @Override
+            public void onFocusChange(View view, boolean hasFocus) {
+                if (hasFocus) {
+                    loadListNames();
+                }
+            }
+        });
     }
 
     private void loadListNames() {
-        Log.e("onTextChanged -> loadListNames",editName.getText().toString());
-
-        // i wanna set default adapter (like just a list of names); from listeEdtudients
 
         String query = editName.getText().toString().toLowerCase();
 
-        ArrayList<String> filteredNames = new ArrayList<>();
+        ArrayList<StudentModel> filteredStudents = new ArrayList<>();
         for (StudentModel student : listeEdtudients) {
             if (student.getName().toLowerCase().contains(query)) {
-                filteredNames.add(student.getName());
+                filteredStudents.add(student);
             }
         }
 
-        ArrayAdapter<String> adapter = new ArrayAdapter<>(
+        ArrayAdapter<StudentModel> adapter = new ArrayAdapter<>(
                 this,
                 android.R.layout.simple_list_item_1,
-                filteredNames
+                filteredStudents
         );
 
         listNames.setAdapter(adapter);
 
-        if (!filteredNames.isEmpty()) {
+        if (!filteredStudents.isEmpty()) {
             listNames.setVisibility(View.VISIBLE);
             listNames.setOnItemClickListener(new AdapterView.OnItemClickListener() {
                 @Override
                 public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
-                    editName.setText(filteredNames.get(i));
+                    editName.setText(filteredStudents.get(i).getName());
                     listNames.setVisibility(View.GONE);
+                    loadListNotes(filteredStudents.get(i));
                 }
             });
         }
     }
 
-    private void setData() {
+    /// Liste Notes Adapter
+    private void loadListNotes(StudentModel student) {
+        Log.e("loadListNotes", "loadListNotes");
+        ListNotesAdapter adapter = new ListNotesAdapter(this, student);
+        listNotes.setAdapter(adapter);
+        listNotes.setVisibility(View.VISIBLE);
 
+        listNotes.setOnItemClickListener(new AdapterView.OnItemClickListener() {
+            @Override
+            public void onItemClick(AdapterView<?> adapterView, View view, int i, long l) {
+                String matiere = new ArrayList<>(student.getData().keySet()).get(i);
+                Double note = student.getNoteByMatiere(matiere);
+                Toast.makeText(getApplicationContext(), matiere + ": " + (note>=10 ? "Succeed" : "Fail"), Toast.LENGTH_SHORT).show();
+            }
+        });
     }
 
 }
